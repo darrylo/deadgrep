@@ -140,6 +140,8 @@ We save the last line here, in case we need to append more text to it.")
   "If non-nil, don't (re)start searches.")
 (defvar-local deadgrep--running nil
   "If non-nil, a search is still running.")
+(defvar-local deadgrep--start-time nil
+  "The start time of the current search.")
 
 (defvar-local deadgrep--debug-command nil)
 (defvar-local deadgrep--debug-first-output nil)
@@ -271,6 +273,13 @@ It is used to create `imenu' index.")
             (let ((inhibit-read-only t))
               (goto-char (point-max))
               (insert output))))
+
+	(save-excursion
+	  (let ((inhibit-read-only t))
+	    (goto-char (point-max))
+	    (insert (format "\nDeadgrep finished, took %.3g seconds\n" (float-time (time-subtract (current-time) deadgrep--start-time))))
+	    (setq deadgrep--start-time nil)
+	    ))
 
         (run-hooks 'deadgrep-finished-hook)
         (message "Deadgrep finished")))))
@@ -1268,6 +1277,7 @@ matches (if the result line has been truncated)."
   "Start a ripgrep search."
   (setq deadgrep--spinner (spinner-create 'progress-bar t))
   (setq deadgrep--running t)
+  (setq deadgrep--start-time (current-time))
   (spinner-start deadgrep--spinner)
   (let* ((args (deadgrep--arguments
                 search-term search-type case
